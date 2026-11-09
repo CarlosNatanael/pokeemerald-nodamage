@@ -729,7 +729,4 @@ extern u8 gMultiUsePlayerCursor;
 extern u8 gNumberOfMovesToChoose;
 extern u8 gBattleControllerData[MAX_BATTLERS_COUNT];
 
-extern u32 gNoDamageWipeCount;
-void TriggerNoDamageWipe(void);
-
 #endif // GUARD_BATTLE_H
