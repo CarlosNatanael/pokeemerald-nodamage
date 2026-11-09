@@ -1867,6 +1867,7 @@ void BattleMainCB2(void)
     RunTextPrinters();
     UpdatePaletteFade();
     RunTasks();
+    CheckPlayerNoDamageWipe();
 
     if (JOY_HELD(B_BUTTON) && gBattleTypeFlags & BATTLE_TYPE_RECORDED && RecordedBattle_CanStopPlayback())
     {
@@ -5268,3 +5269,54 @@ void RunBattleScriptCommands(void)
     if (gBattleControllerExecFlags == 0)
         gBattleScriptingCommandsTable[gBattlescriptCurrInstr[0]]();
 }
+
+// Nosso contador global
+u32 gNoDamageWipeCount = 0; 
+static u8 sWipeDelayTimer = 0;
+
+void CB2_WipeAndReset(void)
+{
+    // Espera 30 frames (~meio segundo) antes de voltar pro menu.
+    // Dá o tempo perfeito pro RA ler a alteração na memória.
+    if (sWipeDelayTimer++ > 30) 
+    {
+        sWipeDelayTimer = 0;
+        DoSoftReset(); // Função nativa que simula A+B+Start+Select
+    }
+}
+
+void TriggerNoDamageWipe(void)
+{
+    gNoDamageWipeCount++;
+    SetMainCallback2(CB2_WipeAndReset); // Muda o callback principal pra nossa tela de reset
+}
+
+static u16 sLastPlayerHP[2] = {0, 0};
+static u32 sLastPersonality[2] = {0, 0};
+
+void CheckPlayerNoDamageWipe(void)
+{
+    u8 playerPositions[2] = {GetBattlerAtPosition(B_POSITION_PLAYER_LEFT), GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)};
+    
+    for (int i = 0; i < 2; i++)
+    {
+        u8 battler = playerPositions[i];
+        u32 currentPid = gBattleMons[battler].personality;
+        u16 currentHp = gBattleMons[battler].hp;
+
+        // Verifica se é o mesmo Pokémon (evita acionar o wipe ao trocar de Pokémon)
+        if (currentPid != 0 && currentPid == sLastPersonality[i])
+        {
+            if (currentHp < sLastPlayerHP[i])
+            {
+                TriggerNoDamageWipe();
+                return;
+            }
+        }
+        
+        // Atualiza a memória pro próximo frame (inclusive se curar)
+        sLastPersonality[i] = currentPid;
+        sLastPlayerHP[i] = currentHp;
+    }
+}
+
