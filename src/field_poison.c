@@ -16,7 +16,7 @@
 #include "trainer_hill.h"
 #include "constants/field_poison.h"
 #include "constants/party_menu.h"
-
+#include "save.h"
 
 static bool32 IsMonValidSpecies(struct Pokemon *pokemon)
 {
@@ -140,6 +140,9 @@ s32 DoPoisonFieldEffect(void)
         }
         pokemon++;
     }
+
+    if (numPoisoned != 0)
+        OnPlayerDamaged();
 
     // Do screen flash effect
     if (numFainted != 0 || numPoisoned != 0)

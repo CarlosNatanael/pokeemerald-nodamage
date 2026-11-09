@@ -51,6 +51,7 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/trainers.h"
+#include "save.h"
 
 extern const u8 *const gBattleScriptsForMoveEffects[];
 
@@ -1915,6 +1916,11 @@ static void Cmd_datahpupdate(void)
                     else
                         gBideTarget[gActiveBattler] = gBattlerTarget;
                 }
+
+                if (GetBattlerSide(gActiveBattler) == B_SIDE_PLAYER
+                 && gBattleMoveDamage > 0
+                 && !(gBattleTypeFlags & BATTLE_TYPE_LINK))
+                    OnPlayerDamaged();
 
                 // Deal damage to the battler
                 if (gBattleMons[gActiveBattler].hp > gBattleMoveDamage)

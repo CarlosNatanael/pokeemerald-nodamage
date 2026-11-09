@@ -12,6 +12,9 @@
 #include "link.h"
 #include "constants/game_stat.h"
 
+#define DAMAGE_COUNTER_MAGIC  0x444D4743 // "DMGC"
+#define DAMAGE_COUNTER_SECTOR SECTOR_ID_RECORDED_BATTLE
+
 static u16 CalculateChecksum(void *, u16);
 static bool8 ReadFlashSector(u8, struct SaveSector *);
 static u8 GetSaveValidStatus(const struct SaveSectorLocation *);
@@ -1050,4 +1053,42 @@ void Task_LinkFullSave(u8 taskId)
         }
         break;
     }
+}
+
+struct DamageCounterData
+{
+    u32 magic;
+    u32 count;
+};
+
+EWRAM_DATA u32 gDamageCounter = 0;
+static EWRAM_DATA u8 sDamageBuf[SECTOR_DATA_SIZE] = {0};
+
+void LoadDamageCounter(void)
+{
+    struct DamageCounterData *d = (struct DamageCounterData *)sDamageBuf;
+
+    if (TryReadSpecialSaveSector(DAMAGE_COUNTER_SECTOR, sDamageBuf) == SAVE_STATUS_OK
+     && d->magic == DAMAGE_COUNTER_MAGIC)
+        gDamageCounter = d->count;
+    else
+        gDamageCounter = 0;
+}
+
+void SaveDamageCounter(void)
+{
+    struct DamageCounterData *d = (struct DamageCounterData *)sDamageBuf;
+
+    CpuFill32(0, sDamageBuf, sizeof(sDamageBuf));
+    d->magic = DAMAGE_COUNTER_MAGIC;
+    d->count = gDamageCounter;
+    TryWriteSpecialSaveSector(DAMAGE_COUNTER_SECTOR, sDamageBuf);
+}
+
+void OnPlayerDamaged(void)
+{
+    if (gDamageCounter < 0xFFFFFFFF)
+        gDamageCounter++;
+    SaveDamageCounter();
+    DoSoftReset();
 }

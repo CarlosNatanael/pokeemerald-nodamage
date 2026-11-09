@@ -24,6 +24,7 @@
 #include "main.h"
 #include "trainer_hill.h"
 #include "constants/rgb.h"
+#include "save.h"
 
 static void VBlankIntr(void);
 static void HBlankIntr(void);
@@ -103,6 +104,7 @@ void AgbMain(void)
     InitRFU();
     RtcInit();
     CheckForFlashMemory();
+    LoadDamageCounter();
     InitMainCallbacks();
     InitMapMusic();
 #ifdef BUGFIX
