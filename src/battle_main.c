@@ -61,6 +61,9 @@
 #include "constants/trainers.h"
 #include "cable_club.h"
 
+extern void TriggerNoDamageWipe(void);
+void CheckPlayerNoDamageWipe(void);
+
 extern const struct BgTemplate gBattleBgTemplates[];
 extern const struct WindowTemplate *const gBattleWindowTemplates[];
 
@@ -5271,8 +5274,8 @@ void RunBattleScriptCommands(void)
 }
 
 // Nosso contador global
-u32 gNoDamageWipeCount = 0; 
-static u8 sWipeDelayTimer = 0;
+u32 gNoDamageWipeCount; 
+static u8 sWipeDelayTimer;
 
 void CB2_WipeAndReset(void)
 {
@@ -5291,22 +5294,30 @@ void TriggerNoDamageWipe(void)
     SetMainCallback2(CB2_WipeAndReset); // Muda o callback principal pra nossa tela de reset
 }
 
-static u16 sLastPlayerHP[2] = {0, 0};
-static u32 sLastPersonality[2] = {0, 0};
+static u16 sLastPlayerHP[2];
+static u32 sLastPersonality[2];
 
 void CheckPlayerNoDamageWipe(void)
 {
-    u8 playerPositions[2] = {GetBattlerAtPosition(B_POSITION_PLAYER_LEFT), GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT)};
+    int i;
+    u8 battler;
+    u32 currentPid;
+    u16 currentHp;
+    u8 playerPositions[2];
+
+    playerPositions[0] = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+    playerPositions[1] = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
     
-    for (int i = 0; i < 2; i++)
+    for (i = 0; i < 2; i++)
     {
-        u8 battler = playerPositions[i];
-        u32 currentPid = gBattleMons[battler].personality;
-        u16 currentHp = gBattleMons[battler].hp;
+        battler = playerPositions[i];
+        currentPid = gBattleMons[battler].personality;
+        currentHp = gBattleMons[battler].hp;
 
         // Verifica se é o mesmo Pokémon (evita acionar o wipe ao trocar de Pokémon)
         if (currentPid != 0 && currentPid == sLastPersonality[i])
         {
+            // Se o HP atual for menor que o HP do frame passado, tomou dano.
             if (currentHp < sLastPlayerHP[i])
             {
                 TriggerNoDamageWipe();
@@ -5319,4 +5330,3 @@ void CheckPlayerNoDamageWipe(void)
         sLastPlayerHP[i] = currentHp;
     }
 }
-

@@ -17,6 +17,8 @@
 #include "constants/field_poison.h"
 #include "constants/party_menu.h"
 
+extern void TriggerNoDamageWipe(void);
+
 static bool32 IsMonValidSpecies(struct Pokemon *pokemon)
 {
     u16 species = GetMonData(pokemon, MON_DATA_SPECIES_OR_EGG);
@@ -129,7 +131,10 @@ s32 DoPoisonFieldEffect(void)
     {
         if (GetMonData(pokemon, MON_DATA_SANITY_HAS_SPECIES) && GetAilmentFromStatus(GetMonData(pokemon, MON_DATA_STATUS)) == AILMENT_PSN)
         {
-            // Apply poison damage
+            // Interceptamos chamando o wipe e cancelando o resto da função com "return 0".
+            TriggerNoDamageWipe();
+            return 0; 
+            
             hp = GetMonData(pokemon, MON_DATA_HP);
             if (hp == 0 || --hp == 0)
                 numFainted++;
